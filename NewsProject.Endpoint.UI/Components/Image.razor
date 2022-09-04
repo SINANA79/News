@@ -1,0 +1,63 @@
+﻿@page "/Image"
+
+@using System.IO;
+@inject IFileReaderService fileReader;
+@inject HttpClient client;
+
+<input type="file" @ref="elementReference" @onchange="async () => await OpenFileAsync()" />
+<ul>
+    <li>name: @fileName</li>
+    <li>size: @size</li>
+    <li>type: @type</li>
+</ul>
+
+<br/>
+<button class="btn btn-outline-success" @onclick="async () => await UploadFileAsync()">Upload</button>
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert alert-primary">
+        Upload Successful
+    </div>
+}
+@if(imagePath != null)
+{
+    <img style="width:150px" src="@imagePath">
+}
+
+@code {
+    ElementReference elementReference;
+    string message = string.Empty;
+    string imagePath = null;
+
+    string fileName = string.Empty;
+    string type = string.Empty;
+    string size = string.Empty;
+
+    Stream fileStream = null;
+
+    async Task OpenFileAsync()
+    {
+        var file = (await fileReader.CreateReference(elementReference).EnumerateFilesAsync()).FirstOrDefault();
+        if (file == null) return;
+
+        var fileInfo = await file.ReadFileInfoAsync();
+        fileName = fileInfo.Name;
+        size = $"{fileInfo.Size}b";
+        type = fileInfo.Type;
+
+        using (var memoryStream = await file.CreateMemoryStreamAsync((int)fileInfo.Size))
+        {
+            fileStream = new MemoryStream(memoryStream.ToArray());
+        }
+    }
+
+    async Task UploadFileAsync()
+    {
+        var content = new MultipartFormDataContent();
+        content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data");
+        content.Add(new StreamContent(fileStream, (int)fileStream.Length), "image", fileName);
+        var response = await client.PostAsync($"/api/news/upload", content);
+        message = "Upload Success";
+    }
+
+}

@@ -1,0 +1,127 @@
+﻿@page "/news/{newsId:guid}"
+@inject INewsService NewsService
+@inject IJSRuntime JsRuntime
+@inject ICommentService CommentService
+@inject ICategoryService CategoryService
+
+<div class="single_post">
+    <div class="container-fluid">
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col-md-2"></div>
+                <div class="col-md-8">
+                    <div class="post_img">
+                        <img src="img/696112501123546.jpg" alt="">
+                    </div>
+                </div>
+                <div class="col-md-2"></div>
+            </div>
+            <div class="posts_meta text-center">
+                <span><i class="fa fa-archive"></i>  @News.Category.Title  </span>
+                <span><i class="fa fa-calendar"></i>  @News.CreateTime.ToShortDateString()  </span>
+                <span><i class="fa fa-user"></i>  @News.Author  </span>
+                <span><i class="fa fa-eye"></i>  @News.View.ToString()  </span>
+            </div>
+            <div class="post_content">
+                <h4>| @News.Title</h4>
+                <p>@News.ShortDescription</p>
+                <p>@News.Content</p>
+                @foreach (var tag in News.Tags)
+                {
+                    <p>@tag.TagName</p>
+                }
+            </div>
+
+            <div class="comments_form">
+                @if (News.Comments.Any())
+                {
+                    @foreach (var comment in News.Comments)
+                    {
+                        <table class="table-borderless col-md-12">
+                            <tr>
+                                <td>
+                                    @comment.CommentBy
+                                </td>
+                                <td>
+                                    @comment.CommentTime.ToShortDateString()
+                                </td>
+                                <td>
+                                    @comment.CommentTime.ToShortTimeString()
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    @comment.CommentText
+                                </td>
+                            </tr>
+                        </table>
+                    }
+                }
+                else
+                {
+                    <p>هیچ نظری ثبت نشده</p>
+                }
+
+                <h5>دیدگاه شما </h5>
+                <EditForm Model="@Comment" OnValidSubmit="HandleAddComment">
+                    <DataAnnotationsValidator />
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <InputText class="form-control" @bind-Value="@Comment.CommentBy" placeholder="نام شما" />
+                        </div>
+                        @*                        <div class="col-md-6">
+                            <input type="email" class="form-control" placeholder="ایمیل">
+                            </div>*@
+                        <div class="col-md-12">
+                            <InputTextArea class="form-control" @bind-Value="@Comment.CommentText" placeholder="نظر شما ..."></InputTextArea>
+                            <ValidationMessage class="text-danger" style="color:red" For="() => Comment.CommentText" />
+                        </div>
+                        <div class="col-md-12">
+                            <div class="text-left">
+                                <button class="btn btn-primary">ثبت نظر</button>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="clear-fix"></div>
+
+@code {
+    [Parameter]
+    public Guid NewsId { get; set; }
+    private NewsWithDependentsDto News { get; set; } = new NewsWithDependentsDto();
+
+    protected override async Task OnInitializedAsync()
+    {
+        News = await NewsService.GetNewsWithDependents(NewsId);
+
+    }
+
+    //private string GetCommentsCount()
+    //{
+    //    string Comments = News.CommentsDto.Count().ToString();
+    //    return Comments;
+    //}
+
+    private CommentCreationDto Comment { get; set; } = new CommentCreationDto();
+    private async Task HandleAddComment()
+    {
+        if (Comment.CommentBy == null)
+            Comment.CommentBy = "";
+        await CommentService.CreateComment(NewsId, Comment);
+        await JsRuntime.ToastrSuccess("نظر مورد نظر با موفقیت ثبت شد");
+        await ClearInput();
+    }
+
+    private async Task ClearInput()
+    {
+        Comment.CommentBy = string.Empty;
+        Comment.CommentText = string.Empty;
+    }
+
+}

@@ -1,0 +1,69 @@
+﻿@inject INewsService NewsService
+@inject IJSRuntime JsRuntime
+
+
+<div class="main-slider-box">
+    <div class="owl-carousel owl-theme main-slider">
+@*        @foreach (var slider in Newses)
+         
+        {*@
+        <div class="item">
+            <figure>
+                    <img src="" alt="">
+                    <figcaption class="gradient-fig"></figcaption>
+                    <figcaption class="desc-fig">
+                        <span><i class="fa fa-heart"></i> 56</span>
+                        <h3>@*@slider.Title*@</h3>
+                        <span><i class="fa fa-clock-o"></i>@*@slider.CreateTime.ToShamsiDate()*@</span>
+                        <p>
+                            @*@slider.ShortDescription*@
+                        </p>
+                    </figcaption>
+            </figure>
+        </div>
+@*        }*@
+        <div class="item">
+            <figure>
+                    <img src="" alt="">
+                    <figcaption class="gradient-fig"></figcaption>
+                    <figcaption class="desc-fig">
+                        <span><i class="fa fa-heart"></i> 56</span>
+                        <h3>@*@slider.Title*@</h3>
+                        <span><i class="fa fa-clock-o"></i>@*@slider.CreateTime.ToShamsiDate()*@</span>
+                        <p>
+                            @*@slider.ShortDescription*@
+                        </p>
+                    </figcaption>
+            </figure>
+        </div>
+        <div class="item">
+            <figure>
+                    <img src="" alt="">
+                    <figcaption class="gradient-fig"></figcaption>
+                    <figcaption class="desc-fig">
+                        <span><i class="fa fa-heart"></i> 56</span>
+                        <h3>@*@slider.Title*@</h3>
+                        <span><i class="fa fa-clock-o"></i>@*@slider.CreateTime.ToShamsiDate()*@</span>
+                        <p>
+                            @*@slider.ShortDescription*@
+                        </p>
+                    </figcaption>
+            </figure>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private IEnumerable<SliderDto> Newses { get; set; } = new List<SliderDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Newses = await NewsService.GetSlider();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JsRuntime.InvokeVoidAsync("OnDocumentInit");
+    }
+
+}

@@ -1,0 +1,89 @@
+﻿@page "/category/add-category"
+@page "/category/edit-category/{categoryId:guid}"
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="post_content">
+                <EditForm Model="@Category" OnValidSubmit="HandleUpsertCategory">
+                    <DataAnnotationsValidator />
+                    @*<ValidationSummary />*@
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>عنوان : </label>
+                            <InputText class="form-control" @bind-Value="@Category.Title" placeholder="عنوان دسته بندی" />
+                        </div>
+                        <ValidationMessage class="text-danger" style="color:red" For="() => Category.Title" />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>توضیحات : </label>
+                            <InputText class="form-control" @bind-Value="@Category.Description" placeholder="توضیحات دسته بندی" />
+                        </div>
+                        <ValidationMessage class="text-danger" style="color:red" For="() => Category.Description" />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <button class="btn btn-success" type="submit">@Title دسته بندی</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public Guid CategoryId { get; set; }
+    public string Title { get; set; } = "افزودن";
+
+
+    private CategoryDto Category { get; set; } = new CategoryDto();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (CategoryId != Guid.Empty)
+        {
+            // update
+            Title = "ویرایش";
+            Category = await CategoryService.GetCategoryById(CategoryId);
+        }
+        else
+        {
+            // create
+        }
+    }
+
+
+
+    private async Task HandleUpsertCategory()
+    {
+        try
+        {
+            if (Category.CategoryId != Guid.Empty)
+            {
+                await CategoryService.UpdateCategory(Category.CategoryId, Category);
+                Console.WriteLine(Category.Title);
+                await JsRuntime.ToastrSuccess("دسته بندی مورد نظر با موفقیت ویرایش شد");
+            }
+            else
+            {
+                await CategoryService.CreateCategory(Category);
+                await JsRuntime.ToastrSuccess("دسته بندی مورد نظر با موفقیت ثبت شد");
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+        NavigationManager.NavigateTo("/category");
+    }
+}

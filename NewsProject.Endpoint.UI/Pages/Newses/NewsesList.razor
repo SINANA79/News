@@ -1,0 +1,141 @@
+﻿@page "/newses"
+@inject INewsService NewsService
+@inject IJSRuntime JsRuntime
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-5">
+            <Search OnSearchChanged="SearchChanged" />
+        </div>
+        <div class="col-md-4">
+            <Sort OnSortChanged="SortChanged" />
+        </div>
+        <div class="col-md-3">
+            <NavLink href="newses/add-news" class="btn btn-info form-control">
+                ثبت خبر جدید
+            </NavLink>
+        </div>
+        <div class="col-md-12"
+            <div class="post_content">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <td>عنوان</td>
+                            <td>تاریخ ثبت</td>
+                            <td>توضیحات کوتاه</td>
+                            <td>دستورات</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Newses.Any())
+                        {
+                            foreach (var news in Newses)
+                            {
+                                                <tr>
+                                                    <td>
+                                        @news.Title
+                                                    </td>
+                                                    <td>
+                                        @news.CreateTime
+                                                    </td>
+                                                    <td>
+                                        @news.ShortDescription
+                                                    </td>
+                                                    <td>
+                                                        <NavLink href="@($"/newses/edit-news/{news.NewsId}")" class="btn btn-warning btn-block">ویرایش</NavLink>
+                                                        <br />
+                                                        <button class="btn btn-danger btn-block" @onclick="() => HandleDelete(news.NewsId)">حذف خبر</button>
+                                                    </td>
+                                                </tr>
+                            }
+                        }
+                        else
+                        {
+                                    <tr>
+                                        <td colspan="4">هیچ خبری یافت نشد</td>
+                                    </tr>
+                        }
+                    </tbody>
+                </table>
+                <Pagination MetaData="MetaData" Spread="2" SelectedPage="SelectedPage" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<DeleteConfirmation IsParentComponentProcessing="IsProcessing" ConfirmationChanged="ConfirmDelete_Click"></DeleteConfirmation>
+
+
+@code {
+    public List<NewsWithCategoryDto> Newses { get; set; } = new List<NewsWithCategoryDto>();
+
+    public MetaData MetaData { get; set; } = new MetaData();
+    private NewsParameters _newsParameters = new NewsParameters();
+
+    private Guid? DeleteNewsId { get; set; } = Guid.Empty;
+
+    public bool IsProcessing { get; set; } = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        await GetNewses();
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        _newsParameters.PageNumber = page;
+        await GetNewses();
+    }
+
+    private async Task SortChanged(string orderBy)
+    {
+        Console.WriteLine(orderBy);
+        _newsParameters.OrderBy = orderBy;
+        await GetNewses();
+    }
+
+    private async Task GetNewses()
+    {
+        var pagingResponse = await NewsService.GetAllNewses(_newsParameters);
+        if (pagingResponse.Items.Count() == 0
+            && !pagingResponse.MetaData.HasNext
+            && pagingResponse.MetaData.HasPrevious)
+        {
+            pagingResponse.MetaData.CurrentPage -= 1;
+            Newses = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            await SelectedPage(MetaData.CurrentPage);
+        }
+        Newses = pagingResponse.Items;
+        MetaData = pagingResponse.MetaData;
+    }
+
+    private async Task SearchChanged(string searchTerm)
+    {
+        Console.WriteLine(searchTerm);
+        _newsParameters.PageNumber = 1;
+        _newsParameters.SearchTerm = searchTerm;
+        await GetNewses();
+    }
+
+    private async Task HandleDelete(Guid newsId)
+    {
+        DeleteNewsId = newsId;
+        await JsRuntime.InvokeVoidAsync("showConfirmationModal");
+    }
+
+    public async Task ConfirmDelete_Click()
+    {
+        IsProcessing = true;
+        if (DeleteNewsId != null)
+        {
+            await NewsService.DeleteNews(DeleteNewsId.Value);
+
+            await JsRuntime.ToastrSuccess("خبر مورد نظر با موفقیت حذف شد");
+            await GetNewses();
+        }
+
+        await JsRuntime.InvokeVoidAsync("hideConfirmationModal");
+        IsProcessing = false;
+    }
+}

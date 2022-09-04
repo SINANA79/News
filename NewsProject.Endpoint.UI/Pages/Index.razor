@@ -1,0 +1,29 @@
+﻿@page "/"
+@*@inject IJSRuntime JsRuntime*@
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <MostCommentNews/>
+        </div>
+        <div class="col-md-6">
+            <Slider/>
+        </div>
+        <div class="col-md-3">
+             <MostViewNews/>
+        </div>
+    </div>
+</div>
+<div
+    <div class="clear-fix"></div>
+    <LatestNews />
+</div>
+
+
+@*@code{
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JsRuntime.InvokeVoidAsync("OnDocumentInit");
+    }
+}*@
+

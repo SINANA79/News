@@ -1,0 +1,178 @@
+﻿@page "/newses/add-news"
+@page "/newses/edit-news/{newsId:guid}"
+@using System.IO
+@inject INewsService NewsService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="post_content">
+                <EditForm Model="@NewsModel" OnValidSubmit="HandleUpsertNews">
+                    <DataAnnotationsValidator />
+                    @*<ValidationSummary />*@
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>عنوان : </label>
+                            <InputText class="form-control" @bind-Value="@NewsModel.Title" placeholder="عنوان خبر" />
+                        </div>
+                        <ValidationMessage class="text-danger" style="color:red" For="() => NewsModel.Title" />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>دسته بندی: </label>
+                            <select @bind="@NewsModel.CategoryId" class="form-control">
+                                @foreach (var cat in Categories)
+                                {
+                                    <option value="@cat.CategoryId">@cat.Title</option>
+                                }
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>نویسنده : </label>
+                            <InputText class="form-control" @bind-Value="@NewsModel.Author" placeholder="نویسنده خبر" />
+                        </div>
+                        <ValidationMessage class="text-danger" style="color:red" For="() => NewsModel.Author" />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>توضیحات کوتاه : </label>
+                            <InputTextArea class="form-control" @bind-Value="@NewsModel.ShortDescription" placeholder="توضیحات کوتاه" />
+                        </div>
+                        <ValidationMessage For="() => NewsModel.ShortDescription" style="color:red" />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>توضیحات : </label>
+                            <InputTextArea class="form-control" @bind-Value="@NewsModel.Content" placeholder="توضیحات" />
+                            @*<CKEditorBlazor Id="MyEditor" @bind-Value=@NewsModel.Content> </CKEditorBlazor>*@
+                        </div>
+                        <ValidationMessage For="() => NewsModel.Content" style="color:red" />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>خبر مهم : </label>
+                            <input type="checkbox" @bind="@Important">
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>تصویر خبر : </label>
+                            <ImageUpload OnChange="AssignImageUrl" />
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <button class="btn btn-success" type="submit">@Title خبر</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public Guid NewsId { get; set; }
+
+    public string Title { get; set; } = "افزودن";
+
+    public bool Important { get; set; }
+
+    private NewsCreationDto NewsModel { get; set; } = new NewsCreationDto();
+    private IEnumerable<CategoryDto> Categories { get; set; } = new List<CategoryDto>();
+    public Guid CategoryId { get; set; }
+    private void AssignImageUrl(string imgUrl) => NewsModel.Image = imgUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = await CategoryService.GetCategories();
+        if (NewsId != Guid.Empty)
+        {
+            // update
+            Title = "ویرایش";
+            NewsModel = await NewsService.GetNews(NewsId);
+            Important = NewsModel.IsImportant;
+
+
+        }
+        else
+        {
+        }
+
+    }
+
+    //private async Task DeleteImage()
+    //{
+    //    try
+    //    {
+    //        var result = FileUploadService.DeleteFile(NewsModel.Image);
+    //        if (result)
+    //        {
+    //            NewsModel.Image = "";
+    //        }
+    //    }
+    //    catch (Exception e)
+    //    {
+    //        await JsRuntime.ToastrError(e.Message);
+    //    }
+    //}
+
+
+    private async Task HandleUpsertNews()
+    {
+
+        try
+        {
+            if (NewsModel.NewsId != Guid.Empty)
+            {
+
+                NewsModel.IsImportant = Important;
+                await NewsService.UpdateNews(NewsModel.NewsId, NewsModel);
+
+                await JsRuntime.ToastrSuccess("خبر مورد نظر با موفقیت ویرایش شد");
+            }
+            else
+            {
+                NewsModel.IsImportant = Important;
+                await NewsService.CreateNews(NewsModel);
+
+                await JsRuntime.ToastrSuccess("خبر مورد نظر با موفقیت ثبت شد");
+            }
+
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+        NavigationManager.NavigateTo("newses");
+    }
+
+    //private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    //{
+    //    try
+    //    {
+    //        FileInfo fileInfo = new FileInfo(e.File.Name);
+    //        if (fileInfo.Extension.ToLower() == ".jpg" ||
+    //            fileInfo.Extension.ToLower() == ".png" ||
+    //            fileInfo.Extension.ToLower() == ".jpeg")
+    //        {
+    //            NewsModel.ImageName = await FileUploadService.UploadFile(e.File);
+    //        }
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        Console.WriteLine(ex);
+    //        throw;
+    //    }
+    //}
+}

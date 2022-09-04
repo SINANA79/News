@@ -1,0 +1,19 @@
+﻿<section>
+    <select class="form-control" @onchange="ApplySort">
+        <option value="-1">- مرتب سازی -</option>
+        <option value="title">عنوان</option>
+        <option value="title desc">عنوان نزولی</option>
+    </select>
+</section>
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnSortChanged { get; set; }
+    private async Task ApplySort(ChangeEventArgs eventArgs)
+    {
+        if (eventArgs.Value.ToString() == "-1")
+        { }
+        await OnSortChanged.InvokeAsync(eventArgs.Value.ToString());
+    }
+
+}

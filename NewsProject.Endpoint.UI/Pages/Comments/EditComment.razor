@@ -1,0 +1,57 @@
+﻿@page "/comments/{commentId:guid}"
+
+@inject ICommentService CommentService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="post_content">
+                <EditForm Model="@Comment" OnValidSubmit="HandleEditComment">
+                    <DataAnnotationsValidator />
+                    @*<ValidationSummary />*@
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label>توضیحات : </label>
+                            <InputTextArea class="form-control" @bind-Value="@Comment.CommentText" placeholder="متن نظر" />
+                        </div>
+                        <ValidationMessage class="text-danger" style="color:red" For="() => Comment.CommentText" />
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <button class="btn btn-success" type="submit">ویرایش نظر</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public Guid CommentId { get; set; }
+
+    private CommentUpdateDto Comment { get; set; } = new CommentUpdateDto();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Comment = await CommentService.GetCommentForUpdate(CommentId);
+    }
+
+    public async Task HandleEditComment()
+    {
+        try
+        {
+            await CommentService.UpdateComment(CommentId, Comment);
+            await JsRuntime.ToastrSuccess("نظر مورد نظر با موفقیت ویرایش شد");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+        NavigationManager.NavigateTo("/comments");
+    }
+    }

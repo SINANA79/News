@@ -1,0 +1,35 @@
+﻿@using System.IO
+
+<div class="col-md-3">
+    <div class="post-box">
+        <a href="/news/@News.NewsId">
+            <figure>
+                <img src="@News.Image" alt="">
+                <figcaption class="meta-fig">
+                    <span><i class="fa fa-clock-o"></i> @News.CreateTime.ToShortDateString()</span>&nbsp;
+                    <span><i class="fa fa-comment-o"></i> 12</span>
+                </figcaption>
+                <figcaption class="view">
+                    <span>@News.CategoryTitle</span>
+                </figcaption>
+            </figure>
+            <div class="text-p">
+                <h5>@News.Title</h5>
+                <p>
+                    @News.ShortDescription
+                </p>
+                <div class="text-rigt">
+                    <a href="/news/@News.NewsId">ادامه ...</a>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public NewsCardDto News { get; set; }
+
+
+}

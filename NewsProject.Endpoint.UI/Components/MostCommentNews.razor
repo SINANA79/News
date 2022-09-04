@@ -1,0 +1,40 @@
+﻿@inject INewsService NewsService
+
+<div class="top-sidebar-r">
+                <span class="title">بیشترین نظرات</span>
+                @foreach(var news in Newses)
+                {
+                <a href="/news/@news.NewsId">
+                    <div class="bx">
+                        <div class="col-md-6">
+                            <div class="img-box">
+                                <figure>
+                                    <img src="@news.Image" alt="">
+                                    
+                                </figure>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="meta">
+                                <h5>
+                                    @news.Title
+                                </h5>
+                                <span><i class="fa fa-clock-o"></i> @news.CreateTime.ToShortDateString()</span>
+                                <div class="text-left">
+                                    <sub><i class="fa fa-comment"></i> @news.Comments.Count().ToString()</sub>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                }
+                </div>
+
+@code {
+        private IEnumerable<NewsWithCommentDto> Newses { get; set; } = new List<NewsWithCommentDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Newses = await NewsService.GetMostCommentNews();
+    }
+}

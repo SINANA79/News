@@ -1,0 +1,30 @@
+﻿@inject INewsService NewsService
+
+<div class="top-sidebar-l">
+    <span class="title">خبر های پر بازدید</span>
+    @foreach(var news in Newses)
+    {
+            <a href="/news/@news.NewsId">
+        <div class="bx">
+            <div class="col-md-3 nopadding">
+                <span><i class="fa fa-eye"></i>@news.View.ToString()</span>
+            </div>
+            <div class="col-md-8 nopadding">
+                <h3>
+                    @news.Title
+                </h3>
+            </div>
+        </div>
+    </a>
+    }
+
+</div>
+
+@code {
+    private IEnumerable<NewsCardDto> Newses { get; set; } = new List<NewsCardDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Newses = await NewsService.GetMostViewNews();
+    }
+}

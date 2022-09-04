@@ -1,0 +1,53 @@
+﻿<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">حذف اطلاعات</h4>
+            </div>
+            <div class="modal-body">
+                آیا از حذف اطلاعات مورد نظر اطمینان دارید؟
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" @onclick="()=>OnConfirmationChanged(false)">کنسل کردن</button>
+
+                @if (IsProcessStart)
+                {
+                    <button class="btn btn-danger">
+                        <i class="fa fa-spin fa-spinner"></i> در حال انجام عملیات
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-danger" @onclick="()=>OnConfirmationChanged(true)">حذف</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public bool IsProcessStart { get; set; }
+
+    [Parameter]
+    public bool IsParentComponentProcessing { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ConfirmationChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        IsProcessStart = IsParentComponentProcessing;
+    }
+
+    protected async Task OnConfirmationChanged(bool value)
+    {
+        if (value)
+        {
+            IsProcessStart = true;
+        }
+
+        await ConfirmationChanged.InvokeAsync(value);
+    }
+}
+

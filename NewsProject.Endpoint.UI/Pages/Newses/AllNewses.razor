@@ -1,0 +1,117 @@
+﻿@page "/allnewses"
+@page "/{categoryId:guid}"
+@inject INewsService NewsService
+@inject ICategoryService CategoryService
+@if (Category != null)
+{
+    <div class="latest-posts">
+        <div class="container-fluid">
+            <div class="blog-title-span">
+                <span class="title">@Category.Title</span>
+            </div>
+            @if (Newses != null && Newses.Any())
+            {
+                @foreach (var news in Newses)
+                {
+                    <SingleNewsItem News="@news" />
+                }
+                <div class="col-md-12 text-center">
+                    <Pagination MetaData="MetaData" Spread="2" SelectedPage="SelectedPage" />
+                </div>
+            }
+            else
+            {
+                <div class="blog-title-span">
+                    <span class="title">خبری نیست!</span>
+                </div>
+            }
+
+        </div>
+    </div>
+}
+else
+{
+    <div class="latest-posts">
+        <div class="container-fluid">
+            <div class="blog-title-span">
+                <span class="title">اخبار و مقالات</span>
+            </div>
+            @if (Newses != null && Newses.Any())
+            {
+                @foreach (var news in Newses)
+                {
+                    <SingleNewsItem News="@news" />
+                }
+                <div class="col-md-12 text-center">
+                    <Pagination MetaData="MetaData" Spread="2" SelectedPage="SelectedPage" />
+                </div>
+            }
+            else
+            {
+                <span class="title">خبری نیست!</span>
+            }
+
+        </div>
+    </div>
+}
+
+@code
+{
+    [Parameter]
+    public Guid CategoryId { get; set; }
+    private string Title { get; set; } = "اخبار و مقالات";
+    public List<NewsCardDto> Newses { get; set; } = new List<NewsCardDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    private CategoryDto Category = new CategoryDto();
+    private LatestNewsParameters NewsParameters = new LatestNewsParameters();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await GetNewses();
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        NewsParameters.PageNumber = page;
+        await GetNewses();
+    }
+
+    private async Task GetNewses()
+    {
+        if (CategoryId != Guid.Empty)
+        {
+            Category = await CategoryService.GetCategoryById(CategoryId);
+            var pagingResponse = await NewsService.GetCategoryNewses(Category.CategoryId, NewsParameters);
+            if (pagingResponse.Items.Count() == 0
+                && !pagingResponse.MetaData.HasNext
+                && pagingResponse.MetaData.HasPrevious)
+            {
+                pagingResponse.MetaData.CurrentPage -= 1;
+                Newses = pagingResponse.Items;
+                MetaData = pagingResponse.MetaData;
+                await SelectedPage(MetaData.CurrentPage);
+            }
+            Newses = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+        else
+        {
+            Category = null;
+            var pagingResponse = await NewsService.GetLatestNewses(NewsParameters);
+            if (pagingResponse.Items.Count() == 0
+                && !pagingResponse.MetaData.HasNext
+                && pagingResponse.MetaData.HasPrevious)
+            {
+                pagingResponse.MetaData.CurrentPage -= 1;
+                Newses = pagingResponse.Items;
+                MetaData = pagingResponse.MetaData;
+                await SelectedPage(MetaData.CurrentPage);
+            }
+            Newses = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+    }
+}
+
+
+

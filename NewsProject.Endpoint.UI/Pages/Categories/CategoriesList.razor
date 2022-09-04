@@ -1,0 +1,88 @@
+﻿@page "/category"
+
+@inject ICategoryService CategoryService
+@inject IJSRuntime JsRuntime
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <NavLink href="category/add-category" class="btn btn-info form-control">
+                ثبت دسته بندی جدید
+            </NavLink>
+            <div class="post_content">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <td>عنوان</td>
+                            <td>توضیحات</td>
+                            <td>دستورات</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Categories.Any())
+                        {
+                            foreach (var category in Categories)
+                            {
+                                <tr>
+                                    <td>
+                                        @category.Title
+                                    </td>
+                                    <td>
+                                        @category.Description
+                                    </td>
+                                    <td>
+                                        <NavLink href="@($"/category/edit-category/{category.CategoryId}")" class="btn btn-warning btn-block">ویرایش</NavLink>
+                                        <br />
+                                        <button class="btn btn-danger btn-block" @onclick="() => HandleDelete(category.CategoryId)">حذف</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4">هیچ دسته بندی یافت نشد</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<DeleteConfirmation IsParentComponentProcessing="IsProcessing" ConfirmationChanged="ConfirmDelete_Click"></DeleteConfirmation>
+
+@code {
+    private IEnumerable<CategoryDto> Categories { get; set; } = new List<CategoryDto>();
+
+    private Guid? DeleteCategoryId { get; set; } = Guid.Empty;
+
+    public bool IsProcessing { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = await CategoryService.GetCategories();
+    }
+
+    private async Task HandleDelete(Guid categoryId)
+    {
+        DeleteCategoryId = categoryId;
+        await JsRuntime.InvokeVoidAsync("showConfirmationModal");
+    }
+
+    public async Task ConfirmDelete_Click()
+    {
+        IsProcessing = true;
+        if (DeleteCategoryId != null)
+        {
+            await CategoryService.DeleteCategory(DeleteCategoryId.Value);
+
+            await JsRuntime.ToastrSuccess("دسته بندی مورد نظر با موفقیت حذف شد");
+            Categories = await CategoryService.GetCategories();
+        }
+
+        await JsRuntime.InvokeVoidAsync("hideConfirmationModal");
+        IsProcessing = false;
+    }
+}

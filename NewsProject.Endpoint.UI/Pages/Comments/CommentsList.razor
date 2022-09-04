@@ -1,0 +1,139 @@
+﻿@page "/comments"
+
+@inject ICommentService CommentService
+@inject IJSRuntime JsRuntime
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="post_content">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <td>نویسنده</td>
+                            <td>متن نظر</td>
+                            <td>دستورات</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Comments.Any())
+                        {
+                            foreach (var comment in Comments)
+                            {
+                                <tr>
+                                    <td>
+                                        @comment.CommentBy
+                                    </td>
+                                    <td>
+                                        @comment.CommentText
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-success btn-block" @onclick="() => HandleAccept(comment.CommentId)">تایید</button>
+                                        <br />
+                                        <NavLink href="@($"/comments/{comment.CommentId}")" class="btn btn-warning btn-block">ویرایش</NavLink>
+                                        <br />
+                                        <button class="btn btn-danger btn-block" @onclick="() => HandleDelete(comment.CommentId)">حذف</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4">هیچ نظری یافت نشد</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <Pagination MetaData="MetaData" Spread="2" SelectedPage="SelectedPage" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<DeleteConfirmation IsParentComponentProcessing="IsProcessing" ConfirmationChanged="ConfirmDelete_Click"></DeleteConfirmation>
+<AcceptConfirmation IsParentComponentProcessing="IsProcessing" ConfirmationChanged="ConfirmAccept_Click"></AcceptConfirmation>
+
+@code {
+    private IEnumerable<GetCommentDto> Comments { get; set; } = new List<GetCommentDto>();
+    public MetaData MetaData { get; set; } = new MetaData();
+    private CommentsParameters CommentsParameters = new CommentsParameters();
+
+    private Guid? CommentId { get; set; } = Guid.Empty;
+
+    public bool IsProcessing { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetComments();
+    }
+
+    private async Task GetComments()
+    {
+        var pagingResponse = await CommentService.GetComments(CommentsParameters);
+        if (pagingResponse.Items.Count() == 0 
+            && !pagingResponse.MetaData.HasNext 
+            && pagingResponse.MetaData.HasPrevious)
+        {
+            pagingResponse.MetaData.CurrentPage -= 1;
+            Comments = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+            await SelectedPage(MetaData.CurrentPage);
+        }
+        else
+        {
+            Comments = pagingResponse.Items;
+            MetaData = pagingResponse.MetaData;
+        }
+
+    }
+
+    private async Task SelectedPage(int page)
+    {
+        CommentsParameters.PageNumber = page;
+        await GetComments();
+    }
+
+    private async Task HandleDelete(Guid commentId)
+    {
+        CommentId = commentId;
+        await JsRuntime.InvokeVoidAsync("showConfirmationModal");
+    }
+
+    private async Task HandleAccept(Guid commentId)
+    {
+        CommentId = commentId;
+        await JsRuntime.InvokeVoidAsync("showAcceptModal");
+    }
+
+
+    public async Task ConfirmDelete_Click()
+    {
+        IsProcessing = true;
+        if (CommentId != null)
+        {
+            await CommentService.DeleteComment(CommentId.Value);
+
+            await JsRuntime.ToastrSuccess("نظر مورد نظر با موفقیت حذف شد");
+            await GetComments();
+        }
+
+        await JsRuntime.InvokeVoidAsync("hideConfirmationModal");
+        IsProcessing = false;
+    }
+
+    public async Task ConfirmAccept_Click()
+    {
+        IsProcessing = true;
+        if (CommentId != null)
+        {
+            await CommentService.AcceptComment(CommentId.Value);
+
+            await JsRuntime.ToastrSuccess("نظر مورد نظر با موفقیت تایید شد");
+            await GetComments();
+        }
+        await JsRuntime.InvokeVoidAsync("hideAcceptModal");
+        IsProcessing = false;
+    }
+
+}
